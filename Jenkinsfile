@@ -114,6 +114,7 @@ pipeline {
             }
         }
 
+
         stage('Deploy Application to EC2') {
             steps {
                 sh '''
@@ -124,11 +125,11 @@ pipeline {
                     # Example deployment: copy artifact & start service
                     # Replace key.pem with correct key
 
-                    scp -o StrictHostKeyChecking=no -i https://github.com/srilatha71/AWS-Infrastructure.git/Jenkins.pem https://github.com/srilatha71/AWS-Infrastructure.git/sample-app.jar ubuntu@$PUBLIC_IP:/home/ubuntu/
+                    scp -o StrictHostKeyChecking=no -i https://github.com/srilatha71/AWS-Infrastructure/blob/main/Jenkins.pem https://github.com/srilatha71/AWS-Infrastructure/blob/main/sample-app.jar ubuntu@$PUBLIC_IP:/home/ubuntu/
 
-                    ssh -o StrictHostKeyChecking=no -i https://github.com/srilatha71/AWS-Infrastructure.git/Jenkins.pem ubuntu@$PUBLIC_IP << EOF
+                    ssh -o StrictHostKeyChecking=no -i https://github.com/srilatha71/AWS-Infrastructure/blob/main/Jenkins.pem ubuntu@$PUBLIC_IP << EOF
                         sudo yum install java -y
-                        nohup java -jar /home/ec2-user/app.jar > app.log 2>&1 &
+                        nohup java -jar /home/ubuntu/app.jar > app.log 2>&1 &
                     EOF
                 '''
             }
