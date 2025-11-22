@@ -1,4 +1,5 @@
 pipeline {
+INSTANCE_ID=$(aws ec2 run-instances \
 --image-id $AMI_ID \
 --count 1 \
 --instance-type t3.micro \
