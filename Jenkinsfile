@@ -3,6 +3,8 @@ pipeline {
 
     environment {
         AWS_REGION = "us-east-1"
+        AWS_REGION_SUBNET1 = "us-east-1a"
+        AWS_REGION_SUBNET2 = "us-east-1b"
         AWS_CREDS = credentials('aws-creds')   // Jenkins stored AWS IAM user
     }
 
@@ -45,8 +47,8 @@ pipeline {
                     aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-hostnames
 
                     echo "Creating Subnets..."
-                    SUBNET1=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.1.0/24 --availability-zone ap-south-1a --query 'Subnet.SubnetId' --output text)
-                    SUBNET2=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.2.0/24 --availability-zone ap-south-1b --query 'Subnet.SubnetId' --output text)
+                    SUBNET1=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.1.0/24 --availability-zone ${AWS_REGION_SUBNET1} --query 'Subnet.SubnetId' --output text)
+                    SUBNET2=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.2.0/24 --availability-zone ${AWS_REGION_SUBNET2} --query 'Subnet.SubnetId' --output text)
 
                     echo $SUBNET1 > subnet1.txt
                     echo $SUBNET2 > subnet2.txt
