@@ -2,17 +2,12 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = "ap-south-1"
+        AWS_REGION = "us-east-1"
         AWS_CREDS = credentials('aws-creds')   // Jenkins stored AWS IAM user
     }
 
     stages {
 
-        stage('Checkout Repo') {
-            steps {
-                git branch: 'main', url: 'https://github.com/your/repo.git'
-            }
-        }
 
         stage('Install AWS CLI') {
             steps {
