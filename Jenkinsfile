@@ -88,15 +88,7 @@ pipeline {
                 sh '''
                     echo "Launching EC2 Instance..."
 
-                    AMI_ID=$(aws ec2 describe-images \
-                             --owners  058264561776 \
-                             --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-noble-24.04-amd64-server-*" \
-                              "Name=architecture,Values=x86_64" \
-                              "Name=root-device-type,Values=ebs" \
-                               "Name=virtualization-type,Values=hvm" \
-                               "Name=state,Values=available" \
-                               --query 'Images | sort_by(@, &CreationDate)[-1].ImageId' \
-                              --output text)
+                    AMI_ID= "ami-0fa3fe0fa7920f68e"
 
                            echo "Ubuntu 24.04 AMI: $AMI_ID"
 
