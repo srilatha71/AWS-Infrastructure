@@ -5,7 +5,7 @@ pipeline {
         AWS_REGION = "us-east-1"
         AWS_REGION_SUBNET1 = "us-east-1a"
         AWS_REGION_SUBNET2 = "us-east-1b"
-        AWS_Account_ID = "058264561776"
+        AWS_Account_ID = "0582-6456-1776"
         AWS_CREDS = credentials('aws-creds')   // Jenkins stored AWS IAM user
     }
 
