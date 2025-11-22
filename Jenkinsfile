@@ -124,9 +124,9 @@ pipeline {
                     # Example deployment: copy artifact & start service
                     # Replace key.pem with correct key
 
-                    scp -o StrictHostKeyChecking=no -i key.pem app.jar ec2-user@$PUBLIC_IP:/home/ec2-user/
+                    scp -o StrictHostKeyChecking=no -i key.pem app.jar ubuntu@$PUBLIC_IP:/home/ubuntu/
 
-                    ssh -o StrictHostKeyChecking=no -i key.pem ec2-user@$PUBLIC_IP << EOF
+                    ssh -o StrictHostKeyChecking=no -i key.pem ubuntu@$PUBLIC_IP << EOF
                         sudo yum install java -y
                         nohup java -jar /home/ec2-user/app.jar > app.log 2>&1 &
                     EOF
