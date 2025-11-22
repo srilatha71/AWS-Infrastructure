@@ -88,7 +88,7 @@ pipeline {
                 sh '''
                     echo "Launching EC2 Instance..."
 
-                    AMI_ID= "ami-0fa3fe0fa7920f68e"
+                    AMI_ID= "ami-0ecb62995f68bb549"
 
                            echo "Ubuntu 24.04 AMI: $AMI_ID"
 
