@@ -125,10 +125,10 @@ pipeline {
                     # Example deployment: copy artifact & start service
                     # Replace key.pem with correct key
 
-                    scp -i /mnt/data/Jenkins.pem sample-app.jar ubuntu@$PUBLIC_IP:/home/ubuntu/
+                    //scp -i /mnt/data/Jenkins.pem sample-app.jar ubuntu@$PUBLIC_IP:/home/ubuntu/
 
 
-                    ssh -o StrictHostKeyChecking=no -i /mnt/data/Jenkins.pem ubuntu@$PUBLIC_IP
+                    ssh -i /mnt/data/Jenkins.pem ubuntu@$PUBLIC_IP
 
                         sudo yum install java -y
                         nohup java -jar /home/ubuntu/app.jar > app.log 2>&1 &
