@@ -5,7 +5,6 @@ pipeline {
         AWS_REGION = "us-east-1"
         AWS_REGION_SUBNET1 = "us-east-1a"
         AWS_REGION_SUBNET2 = "us-east-1b"
-        AWS_Account_ID = "0582-6456-1776"
         AWS_CREDS = credentials('aws-creds')   // Jenkins stored AWS IAM user
     }
 
@@ -90,7 +89,7 @@ pipeline {
                     echo "Launching EC2 Instance..."
 
                     AMI_ID=$(aws ec2 describe-images \
-                             --owners ${AWS_Account_ID} \
+                             --owners  058264561776 \
                              --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-noble-24.04-amd64-server-*" \
                               "Name=architecture,Values=x86_64" \
                               "Name=root-device-type,Values=ebs" \
