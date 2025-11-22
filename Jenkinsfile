@@ -88,9 +88,17 @@ pipeline {
                 sh '''
                     echo "Launching EC2 Instance..."
 
-                    AMI_ID=$(aws ec2 describe-images --owners amazon \
-                      --filters "Name=name,Values=amzn2-ami-hvm-*-x86_64-gp2" \
-                      --query 'Images[0].ImageId' --output text)
+                    AMI_ID=$(aws ec2 describe-images \
+                             --owners 099720109477 \
+                             --filters "Name=name,Values=ubuntu/images/hvm-ssd/ubuntu-noble-24.04-amd64-server-*" \
+                              "Name=architecture,Values=x86_64" \
+                              "Name=root-device-type,Values=ebs" \
+                               "Name=virtualization-type,Values=hvm" \
+                               "Name=state,Values=available" \
+                               --query 'Images | sort_by(@, &CreationDate)[-1].ImageId' \
+                              --output text)
+
+                           echo "Ubuntu 24.04 AMI: $AMI_ID"
 
                     SUBNET1=$(cat subnet1.txt)
 
