@@ -11,21 +11,39 @@ pipeline {
     stages {
 
 
-        stage('Install AWS CLI') {
-            steps {
-                sh '''
-                    sudo apt-get update -y
-                    sudo apt-get install -y unzip
+   stage('Install AWS CLI') {
+    steps {
+        sh '''
+            set -e  # Exit on error
 
-                    # Install AWS CLI
-                    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-                    unzip awscliv2.zip
-                    sudo ./aws/install
+            echo "🔍 Checking if AWS CLI is already installed..."
 
-                    aws --version
-                '''
-            }
-        }
+            if command -v aws >/dev/null 2>&1; then
+                echo "✅ AWS CLI is already installed."
+                aws --version
+            else
+                echo "🚀 AWS CLI not found. Installing..."
+
+                sudo apt-get update -y
+                sudo apt-get install -y unzip
+
+                curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+
+                if [ ! -f awscliv2.zip ]; then
+                    echo "❌ ERROR: Failed to download AWS CLI."
+                    exit 1
+                fi
+
+                unzip -o awscliv2.zip
+                sudo ./aws/install
+
+                echo "✅ AWS CLI installed successfully."
+                aws --version
+            fi
+        '''
+    }
+}
+
 
         stage('Configure AWS Credentials') {
             steps {
