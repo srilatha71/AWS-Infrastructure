@@ -84,7 +84,7 @@ pipeline {
       stage('import pem key') {
             steps {
                 sh '''
-               ssh-keygen -y -f /path/to/mykey.pem > mykey.pub
+               ssh-keygen -y -f /home/ubuntu/infra.pem > mykey.pub
            echo "Import pem to key-name"
             aws ec2 import-key-pair \
             --key-name my-ec2-key \
@@ -126,7 +126,7 @@ pipeline {
         }
 
 
-        stage('Deploy Application to EC2') {
+        //stage('Deploy Application to EC2') {
             steps {
                 sh '''
                     PUBLIC_IP=$(cat public_ip.txt)
@@ -146,7 +146,7 @@ pipeline {
                     EOF
                 '''
             }
-        }
+        }//
     }
 
     post {
