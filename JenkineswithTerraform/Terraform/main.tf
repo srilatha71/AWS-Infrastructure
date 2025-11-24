@@ -1,5 +1,5 @@
 provider "aws" {
-  region = "ap-south-1"
+  region = "us-east-1"
 }
 
 # ------------------------
@@ -83,8 +83,8 @@ resource "aws_security_group" "ec2_sg" {
 # EC2 INSTANCE
 # ------------------------
 resource "aws_instance" "app_server" {
-  ami                    = "ami-0e99a2cc376f2e400"
-  instance_type          = "t2.micro"
+  ami                    = "ami-0ecb62995f68bb549"
+  instance_type          = "t3.micro"
   subnet_id              = aws_subnet.public_subnet.id
   vpc_security_group_ids = [aws_security_group.ec2_sg.id]
   key_name               = var.key_name
