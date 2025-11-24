@@ -1,0 +1,54 @@
+pipeline {
+    agent any
+
+    environment {
+        AWS_REGION = "ap-south-1"
+        KEY_PATH = "/var/lib/jenkins/my-key.pem"
+    }
+
+    stages {
+
+        stage('Checkout') {
+            steps {
+                git 'https://github.com/your/repo.git'
+            }
+        }
+
+        stage('Terraform Init') {
+            steps {
+                sh "terraform init"
+            }
+        }
+
+        stage('Terraform Apply') {
+            steps {
+                sh "terraform apply -auto-approve -var key_name=my-ec2-key"
+            }
+        }
+
+        stage('Get EC2 Public IP') {
+            steps {
+                script {
+                    env.SERVER_IP = sh(script: "terraform output -raw instance_ip", returnStdout: true).trim()
+                }
+                echo "EC2 Public IP = ${SERVER_IP}"
+            }
+        }
+
+        stage('Copy Application Folder') {
+            steps {
+                sh """
+                scp -o StrictHostKeyChecking=no -i ${KEY_PATH} -r files/sample.app ubuntu@${SERVER_IP}:/home/ubuntu/
+                """
+            }
+        }
+
+        stage('Deploy App') {
+            steps {
+                sh """
+                ssh -o StrictHostKeyChecking=no -i ${KEY_PATH} ubuntu@${SERVER_IP} 'bash -s' < scripts/deploy.sh
+                """
+            }
+        }
+    }
+}
