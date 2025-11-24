@@ -160,25 +160,32 @@ pipeline {
 
 
         /* --------------------- Import PEM Key to AWS --------------------- */
-        stage('Import PEM Key') {
-            steps {
-                sh '''
-                    echo "Converting .pem to .pub"
-                    mv /home/ubuntu/infra.pem /var/lib/jenkins/infra.pem
-                    sudo chown jenkins:jenkins /var/lib/jenkins/infra.pem
-                    chmod 600 /var/lib/jenkins/infra.pem
+      stage('Import PEM Key') {
+    steps {
+        sh '''
+            echo "Checking if PEM file exists..."
 
-                    chmod 600 /home/ubuntu/infra.pem
-                    ssh-keygen -y -f /home/ubuntu/infra.pem > mykey.pub
+            if [ -f /home/ubuntu/infra.pem ]; then
+                echo "PEM file found — moving to Jenkins directory..."
+                sudo mv /home/ubuntu/infra.pem /var/lib/jenkins/infra.pem
+                sudo chown jenkins:jenkins /var/lib/jenkins/infra.pem
+                chmod 600 /var/lib/jenkins/infra.pem
+            else
+                echo "PEM file not found in /home/ubuntu — assuming it already exists in Jenkins directory."
+            fi
 
-                    echo "Importing key into AWS..."
-                    aws ec2 import-key-pair \
-                        --key-name my-ec2-key \
-                        --public-key-material file://mykey.pub
-                '''
-            }
-        }
+            echo "Converting .pem to .pub"
+            ssh-keygen -y -f /var/lib/jenkins/infra.pem > mykey.pub
 
+            echo "Importing key into AWS..."
+            aws ec2 import-key-pair \
+                --key-name my-ec2-key \
+                --public-key-material file://mykey.pub
+
+            echo "Key import completed."
+        '''
+    }
+}
 
         /* --------------------- Create EC2 Instance --------------------- */
         stage('Create EC2 for App Deployment') {
