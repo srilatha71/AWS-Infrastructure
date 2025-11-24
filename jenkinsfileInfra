@@ -225,23 +225,34 @@ pipeline {
 
         /* --------------------- Deploy Application via SSH --------------------- */
         stage('Deploy Application to EC2') {
-            steps {
-                sh '''
-                    PUBLIC_IP=$(cat public_ip.txt)
+    steps {
+        sh '''
+            PUBLIC_IP=$(cat public_ip.txt)
 
-                    echo "Copying app to EC2..."
-                    scp -o StrictHostKeyChecking=no -i /home/ubuntu/infra.pem app.jar ubuntu@$PUBLIC_IP:/home/ubuntu/
+            echo "Using EC2 Key: my-ec2-key"
+            PEM_PATH="/var/lib/jenkins/infra.pem"
 
-                    echo "Executing remote commands on EC2..."
-                    ssh -o StrictHostKeyChecking=no -i /home/ubuntu/infra.pem ubuntu@$PUBLIC_IP <<EOF
-                        sudo apt-get update -y
-                        sudo apt-get install -y openjdk-17-jdk
-                        nohup java -jar /home/ubuntu/app.jar > app.log 2>&1 &
-                        echo "App deployed successfully!"
-                    EOF
-                '''
-            }
-        }
+            echo "Copying app.jar to EC2..."
+            scp -o StrictHostKeyChecking=no \
+                -i $PEM_PATH \
+                app.jar ubuntu@$PUBLIC_IP:/home/ubuntu/
+
+            echo "Executing remote commands on EC2..."
+            ssh -o StrictHostKeyChecking=no \
+                -i $PEM_PATH \
+                ubuntu@$PUBLIC_IP <<EOF
+                    sudo apt-get update -y
+                    sudo apt-get install -y openjdk-17-jdk
+
+                    echo "Starting application..."
+                    nohup java -jar /home/ubuntu/app.jar > app.log 2>&1 &
+
+                    echo "App deployed successfully and running in background!"
+EOF
+        '''
+    }
+}
+
     }
 
     post {
