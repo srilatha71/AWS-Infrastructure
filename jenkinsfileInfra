@@ -5,45 +5,35 @@ pipeline {
         AWS_REGION = "us-east-1"
         AWS_REGION_SUBNET1 = "us-east-1a"
         AWS_REGION_SUBNET2 = "us-east-1b"
-        AWS_CREDS = credentials('aws-creds')   // Jenkins stored AWS IAM user
+        AWS_CREDS = credentials('aws-creds')   // AWS IAM Access + Secret key
     }
 
     stages {
 
+        /* --------------------- Install AWS CLI --------------------- */
+        stage('Install AWS CLI') {
+            steps {
+                sh '''
+                    set -e
 
-   stage('Install AWS CLI') {
-    steps {
-        sh '''
-            set -e  # Exit on error
+                    if command -v aws >/dev/null 2>&1; then
+                        echo "AWS CLI already installed."
+                        aws --version
+                    else
+                        sudo apt-get update -y
+                        sudo apt-get install -y unzip
 
-            echo "🔍 Checking if AWS CLI is already installed..."
+                        curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                        unzip -o awscliv2.zip
+                        sudo ./aws/install
+                        aws --version
+                    fi
+                '''
+            }
+        }
 
-            if command -v aws >/dev/null 2>&1; then
-                echo "✅ AWS CLI is already installed."
-                aws --version
-            else
-                echo "🚀 AWS CLI not found. Installing..."
 
-                sudo apt-get update -y
-                sudo apt-get install -y unzip
-
-                curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
-
-                if [ ! -f awscliv2.zip ]; then
-                    echo "❌ ERROR: Failed to download AWS CLI."
-                    exit 1
-                fi
-
-                unzip -o awscliv2.zip
-                sudo ./aws/install
-
-                echo "✅ AWS CLI installed successfully."
-                aws --version
-            fi
-        '''
-    }
-}
-
+        /* --------------------- Configure AWS Credentials --------------------- */
         stage('Configure AWS Credentials') {
             steps {
                 sh '''
@@ -54,6 +44,8 @@ pipeline {
             }
         }
 
+
+        /* --------------------- Create VPC + Subnets + IGW --------------------- */
         stage('Create Network Infra (VPC, Subnets, IGW)') {
             steps {
                 sh '''
@@ -62,6 +54,7 @@ pipeline {
                     echo $VPC_ID > vpc_id.txt
 
                     aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-hostnames
+                    aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-support
 
                     echo "Creating Subnets..."
                     SUBNET1=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.1.0/24 --availability-zone ${AWS_REGION_SUBNET1} --query 'Subnet.SubnetId' --output text)
@@ -81,17 +74,25 @@ pipeline {
                 '''
             }
         }
-      stage('import pem key') {
+
+
+        /* --------------------- Import PEM Key to AWS --------------------- */
+        stage('Import PEM Key') {
             steps {
                 sh '''
-               ssh-keygen -y -f /home/ubuntu/infra.pem > mykey.pub
-           echo "Import pem to key-name"
-            aws ec2 import-key-pair \
-            --key-name my-ec2-key \
-            --public-key-material file://mykey.pub   
-}
-}
+                    echo "Converting .pem to .pub"
+                    ssh-keygen -y -f /home/ubuntu/infra.pem > mykey.pub
 
+                    echo "Importing key into AWS..."
+                    aws ec2 import-key-pair \
+                        --key-name my-ec2-key \
+                        --public-key-material file://mykey.pub
+                '''
+            }
+        }
+
+
+        /* --------------------- Create EC2 Instance --------------------- */
         stage('Create EC2 for App Deployment') {
             steps {
                 sh '''
@@ -99,9 +100,6 @@ pipeline {
 
                     AMI_ID="ami-0ecb62995f68bb549"
                     KEY_NAME="my-ec2-key"
-
-                           echo "Ubuntu 24.04 AMI: $AMI_ID"
-
                     SUBNET1=$(cat subnet1.txt)
 
                     INSTANCE_ID=$(aws ec2 run-instances \
@@ -110,51 +108,50 @@ pipeline {
                       --instance-type t3.micro \
                       --subnet-id $SUBNET1 \
                       --associate-public-ip-address \
-                      --key-name $KEY_NAME 
-                      --query 'Instances[0].InstanceId' \
-                      --output text)
+                      --key-name $KEY_NAME \
+                      --query 'Instances[0].InstanceId' --output text)
 
                     echo $INSTANCE_ID > ec2.txt
 
                     aws ec2 wait instance-running --instance-ids $INSTANCE_ID
 
-                    PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
-                    echo "EC2 Public IP: $PUBLIC_IP"
+                    PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID \
+                                 --query 'Reservations[0].Instances[0].PublicIpAddress' --output text)
+
                     echo $PUBLIC_IP > public_ip.txt
+                    echo "EC2 Public IP: $PUBLIC_IP"
                 '''
             }
         }
 
 
-        //stage('Deploy Application to EC2') {
+        /* --------------------- Deploy Application via SSH --------------------- */
+        stage('Deploy Application to EC2') {
             steps {
                 sh '''
                     PUBLIC_IP=$(cat public_ip.txt)
 
-                    echo "Installing app on EC2..."
+                    echo "Copying app to EC2..."
+                    scp -o StrictHostKeyChecking=no -i /home/ubuntu/infra.pem app.jar ubuntu@$PUBLIC_IP:/home/ubuntu/
 
-                    # Example deployment: copy artifact & start service
-                    # Replace key.pem with correct key
-
-                    //scp -i /mnt/data/Jenkins.pem sample-app.jar ubuntu@$PUBLIC_IP:/home/ubuntu/
-
-
-                    ssh -i /mnt/data/Jenkins.pem ubuntu@$PUBLIC_IP
-
-                        sudo yum install java -y
+                    echo "Executing remote commands on EC2..."
+                    ssh -o StrictHostKeyChecking=no -i /home/ubuntu/infra.pem ubuntu@$PUBLIC_IP <<EOF
+                        sudo apt-get update -y
+                        sudo apt-get install -y openjdk-17-jdk
                         nohup java -jar /home/ubuntu/app.jar > app.log 2>&1 &
+                        echo "App deployed successfully!"
                     EOF
                 '''
             }
-        }//
+        }
     }
 
     post {
         success {
-            echo 'AWS infrastructure created and app deployed successfully!'
+            echo '🎉 AWS infrastructure created & application deployed successfully!'
         }
         failure {
-            echo 'Build failed. Manual cleanup may be required.'
+            echo '❌ Pipeline failed — cleanup may be needed.'
         }
     }
 }
