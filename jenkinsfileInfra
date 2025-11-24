@@ -81,6 +81,7 @@ pipeline {
             steps {
                 sh '''
                     echo "Converting .pem to .pub"
+                    chmod 777 /home/ubuntu/infra.pem
                     ssh-keygen -y -f /home/ubuntu/infra.pem > mykey.pub
 
                     echo "Importing key into AWS..."
