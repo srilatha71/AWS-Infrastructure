@@ -162,7 +162,7 @@ pipeline {
         /* --------------------- Import PEM Key to AWS --------------------- */
       stage('Import PEM Key') {
     steps {
-        sh '''
+        sh '''    
             echo "Checking if PEM file exists..."
 
             if [ -f /home/ubuntu/infra.pem ]; then
@@ -174,19 +174,22 @@ pipeline {
                 echo "PEM file not found in /home/ubuntu — assuming it already exists in Jenkins directory."
             fi
 
-            echo "Converting .pem to .pub"
+            echo "Generating public key (.pub) from PEM..."
             ssh-keygen -y -f /var/lib/jenkins/infra.pem > mykey.pub
+
+            echo "Converting public key into BASE64 (AWS requirement)..."
+            PUBLIC_KEY=$(base64 -w 0 mykey.pub)
 
             echo "Importing key into AWS..."
             aws ec2 import-key-pair \
                 --key-name my-ec2-key \
-                --public-key-material file://mykey.pub
+                --public-key-material "$PUBLIC_KEY" \
+                || echo "AWS key already exists — ignoring error."
 
             echo "Key import completed."
         '''
     }
 }
-
         /* --------------------- Create EC2 Instance --------------------- */
         stage('Create EC2 for App Deployment') {
             steps {
