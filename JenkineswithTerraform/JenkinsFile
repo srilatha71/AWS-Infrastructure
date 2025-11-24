@@ -31,7 +31,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                git 'https://github.com/srilatha71/AWS-Infrastructure.git'
+                git branch: 'main', url: 'https://github.com/srilatha71/AWS-Infrastructure.git'
             }
         }
 
