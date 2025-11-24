@@ -164,6 +164,10 @@ pipeline {
             steps {
                 sh '''
                     echo "Converting .pem to .pub"
+                    sudo mv /home/ubuntu/infra.pem /var/lib/jenkins/infra.pem
+                    sudo chown jenkins:jenkins /var/lib/jenkins/infra.pem
+                    chmod 600 /var/lib/jenkins/infra.pem
+
                     chmod 600 /home/ubuntu/infra.pem
                     ssh-keygen -y -f /home/ubuntu/infra.pem > mykey.pub
 
