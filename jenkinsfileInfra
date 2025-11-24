@@ -231,11 +231,12 @@ pipeline {
 
             echo "Using EC2 Key: my-ec2-key"
             PEM_PATH="/var/lib/jenkins/infra.pem"
+            APP_PATH="/var/lib/jenkins/workspace/AWS-Instance/sample-app.jar"
 
             echo "Copying app.jar to EC2..."
             scp -o StrictHostKeyChecking=no \
                 -i $PEM_PATH \
-                app.jar ubuntu@$PUBLIC_IP:/home/ubuntu/
+                $APP_PATH ubuntu@$PUBLIC_IP:/home/ubuntu/sample-app.jar
 
             echo "Executing remote commands on EC2..."
             ssh -o StrictHostKeyChecking=no \
