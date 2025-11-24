@@ -2,15 +2,36 @@ pipeline {
     agent any
 
     environment {
-        AWS_REGION = "ap-south-1"
+        AWS_REGION = "us-east-1"
+        AWS_CREDS = credentials('aws-creds')   // AWS IAM Access + Secret key
         KEY_PATH = "/var/lib/jenkins/my-key.pem"
     }
 
     stages {
+      stage('Install AWS CLI') {
+            steps {
+                sh '''
+                    set -e
+
+                    if command -v aws >/dev/null 2>&1; then
+                        echo "AWS CLI already installed."
+                        aws --version
+                    else
+                        sudo apt-get update -y
+                        sudo apt-get install -y unzip
+
+                        curl -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+                        unzip -o awscliv2.zip
+                        sudo ./aws/install
+                        aws --version
+                    fi
+                '''
+            }
+        }
 
         stage('Checkout') {
             steps {
-                git 'https://github.com/your/repo.git'
+                git 'https://github.com/srilatha71/AWS-Infrastructure.git'
             }
         }
 
