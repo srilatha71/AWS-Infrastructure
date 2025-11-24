@@ -47,33 +47,116 @@ pipeline {
 
         /* --------------------- Create VPC + Subnets + IGW --------------------- */
         stage('Create Network Infra (VPC, Subnets, IGW)') {
-            steps {
-                sh '''
-                    echo "Creating VPC..."
-                    VPC_ID=$(aws ec2 create-vpc --cidr-block 10.0.0.0/16 --query 'Vpc.VpcId' --output text)
-                    echo $VPC_ID > vpc_id.txt
+    steps {
+        sh '''
+            echo "🔍 Checking if VPC 10.0.0.0/16 already exists..."
 
-                    aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-hostnames
-                    aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-support
+            # Check VPC exists
+            VPC_ID=$(aws ec2 describe-vpcs \
+                --filters "Name=cidr-block,Values=10.0.0.0/16" \
+                --query "Vpcs[0].VpcId" --output text)
 
-                    echo "Creating Subnets..."
-                    SUBNET1=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.1.0/24 --availability-zone ${AWS_REGION_SUBNET1} --query 'Subnet.SubnetId' --output text)
-                    SUBNET2=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block 10.0.2.0/24 --availability-zone ${AWS_REGION_SUBNET2} --query 'Subnet.SubnetId' --output text)
+            if [ "$VPC_ID" = "None" ] || [ -z "$VPC_ID" ]; then
+                echo "🚀 VPC not found. Creating a new one..."
 
-                    echo $SUBNET1 > subnet1.txt
-                    echo $SUBNET2 > subnet2.txt
+                VPC_ID=$(aws ec2 create-vpc \
+                    --cidr-block 10.0.0.0/16 \
+                    --query 'Vpc.VpcId' --output text)
 
-                    echo "Creating Internet Gateway..."
-                    IGW_ID=$(aws ec2 create-internet-gateway --query 'InternetGateway.InternetGatewayId' --output text)
-                    aws ec2 attach-internet-gateway --vpc-id $VPC_ID --internet-gateway-id $IGW_ID
+                aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-hostnames
+                aws ec2 modify-vpc-attribute --vpc-id $VPC_ID --enable-dns-support
 
-                    echo "Creating Route Table..."
-                    RT_ID=$(aws ec2 create-route-table --vpc-id $VPC_ID --query 'RouteTable.RouteTableId' --output text)
-                    aws ec2 create-route --route-table-id $RT_ID --destination-cidr-block 0.0.0.0/0 --gateway-id $IGW_ID
-                    aws ec2 associate-route-table --subnet-id $SUBNET1 --route-table-id $RT_ID
-                '''
-            }
-        }
+                echo "✨ VPC created: $VPC_ID"
+            else
+                echo "✅ Existing VPC found: $VPC_ID"
+            fi
+
+            echo $VPC_ID > vpc_id.txt
+
+            echo "------ SUBNET CREATION ------"
+
+            # SUBNET 1 Check
+            echo "Checking Subnet 10.0.1.0/24..."
+            SUBNET1=$(aws ec2 describe-subnets \
+                --filters "Name=cidr-block,Values=10.0.1.0/24" \
+                --query "Subnets[0].SubnetId" --output text)
+
+            if [ "$SUBNET1" = "None" ] || [ -z "$SUBNET1" ]; then
+                echo "🚀 Creating Subnet 10.0.1.0/24"
+                SUBNET1=$(aws ec2 create-subnet \
+                    --vpc-id $VPC_ID \
+                    --cidr-block 10.0.1.0/24 \
+                    --availability-zone ${AWS_REGION_SUBNET1} \
+                    --query 'Subnet.SubnetId' --output text)
+            else
+                echo "✅ Subnet exists: $SUBNET1"
+            fi
+
+            echo $SUBNET1 > subnet1.txt
+
+            # SUBNET 2 Check
+            echo "Checking Subnet 10.0.2.0/24..."
+            SUBNET2=$(aws ec2 describe-subnets \
+                --filters "Name=cidr-block,Values=10.0.2.0/24" \
+                --query "Subnets[0].SubnetId" --output text)
+
+            if [ "$SUBNET2" = "None" ] || [ -z "$SUBNET2" ]; then
+                echo "🚀 Creating Subnet 10.0.2.0/24"
+                SUBNET2=$(aws ec2 create-subnet \
+                    --vpc-id $VPC_ID \
+                    --cidr-block 10.0.2.0/24 \
+                    --availability-zone ${AWS_REGION_SUBNET2} \
+                    --query 'Subnet.SubnetId' --output text)
+            else
+                echo "✅ Subnet exists: $SUBNET2"
+            fi
+
+            echo $SUBNET2 > subnet2.txt
+
+            echo "------ IGW CREATION ------"
+
+            # Check IGW
+            IGW_ID=$(aws ec2 describe-internet-gateways \
+                --filters "Name=attachment.vpc-id,Values=$VPC_ID" \
+                --query "InternetGateways[0].InternetGatewayId" --output text)
+
+            if [ "$IGW_ID" = "None" ] || [ -z "$IGW_ID" ]; then
+                echo "🚀 Creating Internet Gateway"
+                IGW_ID=$(aws ec2 create-internet-gateway \
+                    --query 'InternetGateway.InternetGatewayId' --output text)
+
+                aws ec2 attach-internet-gateway --vpc-id $VPC_ID --internet-gateway-id $IGW_ID
+            else
+                echo "✅ Existing IGW found: $IGW_ID"
+            fi
+
+            echo "------ ROUTE TABLE ------"
+
+            # Check route table with IGW
+            RT_ID=$(aws ec2 describe-route-tables \
+                --filters "Name=vpc-id,Values=$VPC_ID" "Name=route.gateway-id,Values=$IGW_ID" \
+                --query "RouteTables[0].RouteTableId" --output text)
+
+            if [ "$RT_ID" = "None" ] || [ -z "$RT_ID" ]; then
+                echo "🚀 Creating Route Table"
+                RT_ID=$(aws ec2 create-route-table --vpc-id $VPC_ID \
+                    --query 'RouteTable.RouteTableId' --output text)
+
+                aws ec2 create-route \
+                    --route-table-id $RT_ID \
+                    --destination-cidr-block 0.0.0.0/0 \
+                    --gateway-id $IGW_ID
+            else
+                echo "✅ Route table already exists: $RT_ID"
+            fi
+
+            # Associate subnet 1 always (safe)
+            aws ec2 associate-route-table --subnet-id $SUBNET1 --route-table-id $RT_ID || true
+
+            echo "🚀 Network Infra Ready!"
+        '''
+    }
+}
 
 
         /* --------------------- Import PEM Key to AWS --------------------- */
@@ -81,7 +164,7 @@ pipeline {
             steps {
                 sh '''
                     echo "Converting .pem to .pub"
-                    chmod 777 /home/ubuntu/infra.pem
+                    chmod 600 /home/ubuntu/infra.pem
                     ssh-keygen -y -f /home/ubuntu/infra.pem > mykey.pub
 
                     echo "Importing key into AWS..."
