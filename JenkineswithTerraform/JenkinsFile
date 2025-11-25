@@ -80,13 +80,23 @@ EOF
         }
 
         stage('Get EC2 Public IP') {
-            steps {
-                script {
-                    env.SERVER_IP = sh(script: "terraform output -raw instance_ip", returnStdout: true).trim()
-                }
-                echo "EC2 Public IP = ${SERVER_IP}"
-            }
+    steps {
+        script {
+
+            // Go to Terraform directory and read output
+            env.SERVER_IP = sh(
+                script: """
+                    cd /var/lib/jenkins/workspace/terraform-pipeline/JenkineswithTerraform/Terraform
+                    terraform output -raw instance_ip
+                """,
+                returnStdout: true
+            ).trim()
+
+            echo "EC2 Public IP = ${SERVER_IP}"
         }
+    }
+}
+
 
         stage('Copy Application Folder') {
             steps {
