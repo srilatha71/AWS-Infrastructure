@@ -46,7 +46,10 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
-                sh "/usr/bin/terraform apply --auto-approve -var key_name=my-ec2-key"
+                sh """
+                  cd /var/lib/jenkins/workspace/terraform-pipeline/JenkineswithTerraform/Terraform
+                 /usr/bin/terraform apply --auto-approve -var key_name=my-ec2-key
+                """
             }
         }
 
