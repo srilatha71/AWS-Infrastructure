@@ -46,7 +46,7 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
-                sh "/usr/bin/terraform apply -auto-approve -var key_name=my-ec2-key"
+                sh "/usr/bin/terraform apply --auto-approve -var key_name=my-ec2-key"
             }
         }
 
