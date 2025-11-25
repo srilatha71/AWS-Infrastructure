@@ -39,14 +39,14 @@ pipeline {
             steps {
                 sh """
                  cd '/var/lib/jenkins/workspace/terraform-pipeline/JenkineswithTerraform/Terraform'
-                 "terraform init"
+                 "/usr/bin/terraform init"
                  """
             }
         }
 
         stage('Terraform Apply') {
             steps {
-                sh "terraform apply -auto-approve -var key_name=my-ec2-key"
+                sh "/usr/bin/terraform apply -auto-approve -var key_name=my-ec2-key"
             }
         }
 
