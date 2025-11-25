@@ -1,4 +1,4 @@
-variable "key_name" {
-  description = "EC2 key pair name"
-  type        = string
-}
+#variable "key_name" {
+ # description = "EC2 key pair name"
+  #type        = string
+#}
