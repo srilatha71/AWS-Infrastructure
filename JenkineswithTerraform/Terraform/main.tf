@@ -79,7 +79,7 @@ resource "aws_security_group" "ec2_sg" {
   }
 }
 #-----------------------------------------
-              Key-pair
+# Key-pair
 #-----------------------------------------
 resource "tls_private_key" "rsa_4096" {
   algorithm = "RSA"
