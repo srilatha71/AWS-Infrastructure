@@ -38,8 +38,8 @@ pipeline {
         stage('Terraform Init') {
             steps {
                 sh """
-                 cd '/var/lib/jenkins/workspace/terraform-pipeline/JenkineswithTerraform/Terraform'
-                 "/usr/bin/terraform init"
+                 cd /var/lib/jenkins/workspace/terraform-pipeline/JenkineswithTerraform/Terraform
+                 /usr/bin/terraform init
                  """
             }
         }
