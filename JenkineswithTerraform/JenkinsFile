@@ -4,7 +4,7 @@ pipeline {
     environment {
         AWS_REGION = "us-east-1"
         AWS_CREDS = credentials('aws-creds')   // AWS IAM Access + Secret key
-        KEY_PATH = "/var/lib/jenkins/my-key.pem"
+        KEY_PATH = "/var/lib/jenkins/workspace/terraform-pipeline/JenkineswithTerraform/Terraform/my-ec2-key"
     }
 
     stages {
@@ -109,7 +109,7 @@ EOF
         stage('Deploy App') {
             steps {
                 sh """
-                ssh -o StrictHostKeyChecking=no -i ${KEY_PATH} ubuntu@${SERVER_IP} 'bash -s' < scripts/deploy.sh
+                ssh -o StrictHostKeyChecking=no -i ${KEY_PATH} ubuntu@${SERVER_IP} 'bash -s' < /var/lib/jenkins/workspace/terraform-pipeline/JenkineswithTerraform/scripts/deploy.sh
                 """
             }
         }
