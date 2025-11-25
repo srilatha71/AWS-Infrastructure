@@ -195,11 +195,9 @@ pipeline {
             steps {
                 sh '''
                     echo "Launching EC2 Instance..."
-
                     AMI_ID="ami-0ecb62995f68bb549"
                     KEY_NAME="my-ec2-key"
                     SUBNET1=$(cat subnet1.txt)
-
                     INSTANCE_ID=$(aws ec2 run-instances \
                       --image-id $AMI_ID \
                       --count 1 \
@@ -210,7 +208,6 @@ pipeline {
                       --query 'Instances[0].InstanceId' --output text)
 
                     echo $INSTANCE_ID > ec2.txt
-
                     aws ec2 wait instance-running --instance-ids $INSTANCE_ID
 
                     PUBLIC_IP=$(aws ec2 describe-instances --instance-ids $INSTANCE_ID \
