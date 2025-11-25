@@ -101,7 +101,7 @@ EOF
         stage('Copy Application Folder') {
             steps {
                 sh """
-                scp -o StrictHostKeyChecking=no -i ${KEY_PATH} -r files/sample.app ubuntu@${SERVER_IP}:/home/ubuntu/
+                scp -o StrictHostKeyChecking=no -i ${KEY_PATH} -r /var/lib/jenkins/workspace/terraform-pipeline/JenkineswithTerraform/files/sample-app.jar ubuntu@${SERVER_IP}:/home/ubuntu/
                 """
             }
         }
