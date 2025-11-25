@@ -103,6 +103,7 @@ EOF
                 sh """
                 chmod 600 ${KEY_PATH}
                 ls -ltr
+                cd /var/lib/jenkins/workspace/terraform-pipeline/JenkineswithTerraform/
                 scp -o StrictHostKeyChecking=no -i ${KEY_PATH} -r /var/lib/jenkins/workspace/terraform-pipeline/JenkineswithTerraform/files/sample-app.jar ubuntu@${SERVER_IP}:/home/ubuntu/
                 """
             }
@@ -111,7 +112,7 @@ EOF
         stage('Deploy App') {
             steps {
                 sh """
-                ssh -o StrictHostKeyChecking=no -i ${KEY_PATH} ubuntu@${SERVER_IP} 'bash -s' < /var/lib/jenkins/workspace/terraform-pipeline/JenkineswithTerraform/scripts/deploy.sh
+                ssh -o StrictHostKeyChecking=no -i ${KEY_PATH} ubuntu@${SERVER_IP} 'bash -s' < /var/lib/jenkins/workspace/terraform-pipeline/JenkineswithTerraform/script/deploy.sh
                 """
             }
         }
